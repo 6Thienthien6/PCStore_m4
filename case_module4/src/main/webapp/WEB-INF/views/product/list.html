@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+
+<head>
+    <title>PCStore Shop</title>
+    <th:block th:replace="/layout/head :: head"/>
+</head>
+
+<body data-layout="horizontal">
+
+<!-- Begin page -->
+<div id="wrapper">
+
+    <th:block th:replace="/layout/header :: header"/>
+
+    <div class="content-page" style="background: white">
+        <div class="content">
+
+            <!-- Start Content-->
+            <div class="container-fluid">
+
+                <!-- start page title -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="page-title-box">
+                            <h4 class="page-title"><a href="/users">USER</a></h4>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-12">
+                    <div class="card-box">
+                        <div class="row">
+                            <div class="col-9">
+                                <h4 class="header-title mb-3">List Product</h4>
+
+                            </div>
+                            <div class="col-3">
+                                <button class="btn btn-success btn-add create"
+                                        style="margin-left: 50px; margin-bottom: 15px"
+                                >
+                                    <i class="fa fa-plus"></i> Add new Product
+                                </button>
+                            </div>
+                            <table id="tbProduct" class="table table-bordered dt-responsive nowrap"
+                                   style="border-collapse: collapse; border-spacing: 0; width: 100%;text-align: center ">
+                                <thead>
+                                <tr style="background: grey">
+                                    <th class="">Id</th>
+                                    <th class="col-2">Name</th>
+                                    <th class="col-2">Image</th>
+                                    <th class="col-2">Amount</th>
+                                    <th class="col-2">Price</th>
+                                    <th class="col-2">Category</th>
+                                    <th class="col-2">Action</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <th:block th:replace="/product/modal_update_product :: modal_update_product"/>
+        <th:block th:replace="/product/modal_create_product :: modal_create_product"/>
+
+        <footer class="footer">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-md-12">
+                        06/2022 - 12/2022 &copy; Theme by COS Design
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+</div>
+
+<th:block th:replace="/layout/script :: script"/>
+
+<script>
+    let product = new Product();
+    let category = new Category();
+
+    function renderProduct(product) {
+        let str = `
+                                <tr id="tr_${product.id}">
+                                    <td>${product.id}</td>
+                                    <td>${product.name}</td>
+                                    <td>
+                                       <img src="${product.image}" width="120px" height="auto"/>
+                                    </td>
+                                    <td>${product.amount}</td>
+                                    <td>${new Intl.NumberFormat('vi-VN', {
+            style: 'currency',
+            currency: 'VND'
+        }).format(product.price)}
+                                    </td>
+                                    <td>${product.category.categoryName}</td>
+                                    <td>
+                                <button type="button" class="btn btn-outline-primary update" data-id="${product.id}"
+                                    data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Edit">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button type="button" class="btn btn-outline-danger block" data-id="${product.id}"
+                                    data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Delete">
+                                    <i class="far fa-trash-alt"></i>
+                                </button>
+                                  </td>
+                                </tr>
+                                `;
+        return str;
+    }
+
+    function loadProducts() {
+        $.ajax({
+            headers: {
+                "accept": "application/json",
+                "content-type": "application/json"
+            },
+            type: "GET",
+            url: "http://localhost:8080/api/products"
+        })
+            .done((data) => {
+                let tbProduct = $("#tbProduct tbody");
+                console.log(data);
+                data.forEach(item => {
+                    product = item;
+                    let str = renderProduct(product);
+                    tbProduct.prepend(str);
+                });
+                handleBtn();
+                showCategory();
+            });
+    };
+
+    $(".create").on("click", () => {
+        showCategory()
+        $("#modalCreateProduct").modal("show");
+    });
+
+    function handleShowFormEdit() {
+        $(".update").on("click", function () {
+            let id = $(this).data("id");
+            $('#modalUpdateProduct').modal('show');
+            findProductById(id).then((result) => {
+                $("#nameUp").val(result.name);
+                $("#imageUp").val(result.image);
+                $("#amountUp").val(result.amount);
+                $("#priceUp").val(result.price);
+                $("#categoryUp").val(result.category.id);
+            });
+        });
+    }
+
+    function findProductById(id) {
+        return $.ajax({
+            headers: {
+                accept: "application/json",
+                "content-type": "application/json"
+            },
+            type: "GET",
+            url: "http://localhost:8080/api/products/" + id
+        })
+            .done((data) => {
+                user = data;
+            })
+            .fail((jqXHR) => {
+                console.log(jqXHR);
+            })
+    }
+
+    function handleBlockUser() {
+        $(".block").on("click", function () {
+            let id = $(this).data("id");
+            App.SweetAlert.showDeactivateConfirmDialog()
+                .then((result) => {
+                    console.log(result)
+                    if (result.isConfirmed)
+                        doBlock(id);
+                });
+
+            // findProductById(id).then(function () {
+            //     App.SweetAlert.showDeactivateConfirmDialog()
+            //         .then((result) => {
+            //
+            //             if (result.isConfirmed)
+            //                 doBlock();
+            //         });
+            // })
+        })
+    }
+
+    $("#btnCreate").on("click", function () {
+        $('#modalCreateProduct .modal-alert-danger').removeClass('show').addClass('hide');
+        $("#modalCreateProduct .modal-alert-danger").empty();
+        $('#frmCreate').submit();
+    })
+
+    $('#btnUpdate').on('click', function () {
+        $('#modalUpdateProduct .modal-alert-danger').removeClass('show').addClass('hide');
+        $("#modalUpdateProduct .modal-alert-danger").empty();
+        $('#frmUpdateProduct').submit();
+    })
+
+    $('#frmCreate').validate({
+        rules: {
+            name: {
+                required: true,
+                minlength: 3,
+                maxlength: 50
+            },
+            image: {
+                required: true,
+                // maxlength: 255
+            },
+            amount: {
+                required: true,
+                min: 1,
+                max: 1000000
+            },
+            price: {
+                required: true,
+                min: 10000,
+                max: 1000000000
+            }
+        },
+        messages: {
+            name: {
+                required: "Vui lòng nhập tên sản phẩm",
+                minlength: "Tên sản phẩm tên tối thiểu 3 ký tự",
+                maxlength: "Tên sản phẩm tối đa 50 ký tự"
+            },
+            image: {
+                required: "Vui lòng nhập đường đẫn ảnh",
+            },
+            amount: {
+                required: "Vui lòng nhập số lượng",
+                min: "Số lượng tối thiểu 1 ",
+                max: "Số lượng tối đa 1.000.000 "
+            },
+            price: {
+                required: "Vui lòng nhập giá",
+                min: "Giá sản phẩm tối thiểu 10.000đ!",
+                max: "Giá sản phẩm tối đa 1.000.000.000 đ!"
+            }
+        },
+        errorLabelContainer: "#modalCreateProduct .modal-alert-danger",
+        errorPlacement: function (error, element) {
+            error.appendTo("#modalCreateProduct .modal-alert-danger");
+        },
+        showErrors: function (errorMap, errorList) {
+            if (this.numberOfInvalids() > 0) {
+                $("#modalCreateProduct .modal-alert-danger").removeClass("hide").addClass("show");
+            } else {
+                $("#modalCreateProduct .modal-alert-danger").removeClass("show").addClass("hide").empty();
+                $("#frmCreate input.error").removeClass("error");
+            }
+            this.defaultShowErrors();
+        },
+        submitHandler: function () {
+            doCreate();
+        }
+    });
+
+    $('#frmUpdateProduct').validate({
+        rules: {
+            nameUp: {
+                required: true,
+                minlength: 3,
+                maxlength: 50
+            },
+            imageUp: {
+                required: true,
+                // maxlength: 255
+            },
+            amountUp: {
+                required: true,
+                min: 1,
+                max: 1000000
+            },
+            priceUp: {
+                required: true,
+                min: 0,
+                max: 1000000000
+            }
+        },
+        messages: {
+            nameUp: {
+                required: "Vui lòng nhập lại tên sản phẩm",
+                minlength: "Tên sản phẩm tên tối thiểu 5 ký tự",
+                maxlength: "Tên sản phẩm tối đa 50 ký tự"
+            },
+            imageUp: {
+                required: "Vui lòng nhập lại đường đẫn ảnh",
+            },
+            amountUp: {
+                required: "Vui lòng nhập lại số lượng",
+                min: "Số lượng tối thiểu 1 ",
+                max: "Số lượng tối đa 1.000.000 "
+            },
+            priceUp: {
+                required: "Vui lòng nhập giá",
+                min: "Giá sản phẩm tối thiểu 0đ!",
+                max: "Giá sản phẩm tối đa 1.000.000.000 đ!"
+            }
+        },
+        errorLabelContainer: "#modalUpdateProduct .modal-alert-danger",
+        errorPlacement: function (error, element) {
+            error.appendTo("#modalUpdateProduct .modal-alert-danger");
+        },
+        showErrors: function (errorMap, errorList) {
+            if (this.numberOfInvalids() > 0) {
+                $("#modalUpdateProduct .modal-alert-danger").removeClass("hide").addClass("show");
+            } else {
+                $("#modalUpdateProduct .modal-alert-danger").removeClass("show").addClass("hide").empty();
+                $("#frmUpdateProduct input.error").removeClass("error");
+            }
+            this.defaultShowErrors();
+        },
+        submitHandler: function () {
+            doUpdate();
+        }
+    });
+
+    function doCreate() {
+        category.id = $("#category").val();
+        category.categoryName = $("#category option:selected").text();
+
+        delete product.id;
+        product.name = $('#name').val();
+        product.image = $('#image').val();
+        product.amount = $('#amount').val();
+        product.price = $('#price').val();
+        product.category = category;
+        product.isDeleted = +0;
+
+        $.ajax({
+            headers: {
+                "accept": "application/json",
+                "content-type": "application/json"
+            },
+            type: "POST",
+            url: "http://localhost:8080/api/products/create",
+            data: JSON.stringify(product)
+        })
+            .done((data) => {
+                console.log(data);
+                product = data;
+                let str = renderProduct(product);
+
+                $("#tbProduct tbody").prepend(str);
+                handleBtn();
+                $("#modalCreateProduct").modal("hide");
+                App.SweetAlert.showSuccessAlert("Create product success!");
+            })
+            .fail((jqXHR) => {
+                console.log(jqXHR);
+                let str = ``;
+                if (jqXHR.status === 401) {
+                    App.SweetAlert.showErrorAlert(App.ERROR_401);
+                    setTimeout(() => {
+                        location.href = "/logout";
+                    }, 3000)
+
+                } else if (jqXHR.status === 403) {
+                    App.SweetAlert.showErrorAlert(App.ERROR_403);
+
+                } else if (jqXHR.status === 500) {
+                    App.SweetAlert.showErrorAlert(App.ERROR_500);
+                } else if (jqXHR.responseJSON) {
+                    $.each(jqXHR.responseJSON, function (key, value) {
+                        str += `<label id="${key}Up-error" class="error" for="${key}Up">${value}</label>`;
+                        $("#" + key).addClass("error");
+                    });
+                    $("#modalCreateProduct .modal-alert-danger").empty().removeClass("hide").addClass("show").append(str);
+                }
+
+
+            })
+    }
+
+    function doUpdate() {
+
+        category.id = $("#categoryUp").val();
+        category.categoryName = $("#categoryUp option:selected").text();
+        console.log(category);
+
+
+        product.name = $('#nameUp').val();
+        product.image = $('#imageUp').val();
+        product.amount = $('#amountUp').val();
+        product.price = $('#priceUp').val();
+        product.category = category;
+
+        $.ajax({
+            headers: {
+                "accept": "application/json",
+                "content-type": "application/json"
+            },
+            type: "PUT",
+            url: "http://localhost:8080/api/products/edit/" + product.id,
+            data: JSON.stringify(product)
+        })
+            .done((data) => {
+                product = data;
+                let str = renderProduct(product)
+                let currentRow = $('#tr_' + product.id);
+                currentRow.replaceWith(str);
+                handleBtn();
+                App.SweetAlert.showSuccessAlert("Update product success!");
+                $("#modalUpdateProduct").modal("hide");
+            })
+            .fail((jqXHR) => {
+                let str = ``;
+                if (jqXHR.status === 401) {
+                    App.SweetAlert.showErrorAlert(App.ERROR_401);
+                    setTimeout(() => {
+                        location.href = "/logout";
+                    }, 3000)
+                } else if (jqXHR.status === 403) {
+                    App.SweetAlert.showErrorAlert(App.ERROR_403);
+
+                } else if (jqXHR.status === 500) {
+                    App.SweetAlert.showErrorAlert(App.ERROR_500);
+                } else if (jqXHR.responseJSON) {
+                    $.each(jqXHR.responseJSON, function (key, value) {
+                        str += `<label id="${key}Up-error" class="error" for="${key}Up">${value}</label>`;
+                        $("#" + key).addClass("error");
+                    });
+                    $("#modalUpdateProduct .modal-alert-danger").empty().removeClass("hide").addClass("show").append(str);
+                }
+            })
+    }
+
+    function doBlock(id) {
+        $.ajax({
+            headers: {
+                "accept": "application/json",
+                "content-type": "application/json"
+            },
+            type: "DELETE",
+            url: "http://localhost:8080/api/products/block/" + id,
+            data: JSON.stringify(product)
+        })
+            .done((item) => {
+                let currentRow = $('#tr_' + item);
+                currentRow.replaceWith("");
+
+                handleBtn();
+                App.SweetAlert.showSuccessAlert("Deleted product success!");
+
+            })
+            .fail((jqXHR) => {
+
+                if (jqXHR.status === 401) {
+                    App.SweetAlert.showErrorAlert(App.ERROR_401);
+                    setTimeout(() => {
+                        location.href = "/logout";
+                    }, 3000)
+
+                } else if (jqXHR.status === 403) {
+                    App.SweetAlert.showErrorAlert(App.ERROR_403);
+
+                } else if (jqXHR.status === 500) {
+                    App.SweetAlert.showErrorAlert(App.ERROR_500);
+                }
+            })
+    }
+
+    $("#modalCreateProduct").on("hidden.bs.modal", function () {
+        $("#modalCreateProduct .modal-alert-danger").empty();
+        $("#frmCreate")[0].reset();
+        $('#modalCreateProduct .modal-alert-danger').removeClass('show').addClass('hide');
+    });
+
+    $("#modalUpdateProduct").on("hidden.bs.modal", function () {
+        $("#modalUpdateProduct .modal-alert-danger").empty();
+        $("#modalUpdateProduct .modal-alert-danger").removeClass("show").addClass("hide");
+        $("#frmEdit input.error").removeClass("error");
+        $("#frmUpdate")[0].reset();
+        $("#frmUpdate").validate().resetForm();
+    });
+
+
+    function handleBtn() {
+        handleShowFormEdit();
+        handleBlockUser();
+    }
+
+    function findProductById(id) {
+        return $.ajax({
+            headers: {
+                "accept": "application/json",
+                "content-type": "application/json"
+            },
+            type: "GET",
+            url: "http://localhost:8080/api/products/" + id
+        })
+            .done((data) => {
+                console.log(data);
+                product = data;
+            })
+            .fail((err) => {
+                alert("Id not found");
+            })
+    }
+
+
+    function showCategory() {
+        $.ajax({
+            type: "GET",
+            url: "http://localhost:8080/api/categories"
+        }).done((data) => {
+            $("#category").empty();
+            $("#categoryUp").empty();
+
+            $.each(data, (i, item) => {
+                let str = `<option value="${item.id}" >${item.categoryName}</option>`;
+                $("#category").append(str);
+                $("#categoryUp").append(str);
+            })
+        })
+            .fail((err) => {
+                alert("Load category fail!");
+            })
+    }
+
+    function doSearchProduct() {
+        $('#btnSearchProduct').on('click', function () {
+            let query = $('#searchProduct').val();
+            $('#tbProduct tbody').html("")
+            if (query === "") {
+                loadProducts();
+                return
+            }
+
+            $.ajax({
+                headers: {
+                    "Accept": "application/json",
+                    "Content-Type": "application/json"
+                },
+                "type": "GET",
+                "url": "http://localhost:8080/api/products/search/" + query
+            })
+                .done((data) => {
+                    $('#tbProduct tbody').html("")
+                    $.each(data, (i, item) => {
+                        product = item;
+                        let str = renderProduct(product)
+                        $('#tbProduct tbody').prepend(str);
+                    })
+                })
+        })
+    }
+
+    doSearchProduct();
+    loadProducts();
+</script>
+
+</body>
+
+</html>

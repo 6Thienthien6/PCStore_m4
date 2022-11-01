@@ -1,0 +1,43 @@
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<th:block th:fragment="modalUpdate">
+    <div class="modal fade" id="modalUpdateUser" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="staticBackdropLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Update User</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form action="" id="frmUpdate">
+                        <input type="hidden" id="customerIdUp">
+                        <div class="row">
+                            <div class="col-lg-6 mt-3">
+                                <label for="fullNameUp">Full Name</label>
+                                <input type="text" class="form-control" id="fullNameUp" readonly>
+                            </div>
+                            <div class="col-lg-6 mt-3">
+                                <label for="phoneUp">Phone</label>
+                                <input type="tel" class="form-control" id="phoneUp" readonly>
+                            </div>
+                            <div class="col-lg-6 mt-3">
+                                <label for="userNameUp">User Name</label>
+                                <input type="text" class="form-control" id="userNameUp" readonly>
+                            </div>
+                            <div class="col-lg-6 mt-3">
+                                <label class="col-sm-12 col-form-label">Role</label>
+                                <div class="col-sm-12">
+                                    <select class="form-select" id="roleIdUp" name="roleIdUp"></select>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-outline-success" id="btnUpdate">Update</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</th:block>

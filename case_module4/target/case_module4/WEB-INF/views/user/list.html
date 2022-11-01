@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+
+<head>
+    <title>PCStore Shop</title>
+    <th:block th:replace="/layout/head :: head"/>
+    <link rel="stylesheet" href="/assets/css/iziToast-1.4.0.min.css">
+
+</head>
+
+<body data-layout="horizontal">
+
+<!-- Begin page -->
+<div id="wrapper">
+
+    <th:block th:replace="/layout/header :: header"/>
+
+    <div class="content-page " style="background: white" >
+        <div class="content">
+
+            <!-- Start Content-->
+            <div class="container-fluid">
+
+                <!-- start page title -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="page-title-box">
+                            <h4 class="page-title"><a href="/products">PRODUCT</a></h4>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-xl-12">
+                        <div class="card-box">
+                            <h4 class="header-title mb-4">List Users</h4>
+
+                            <div class="table-responsive">
+                                <input type="hidden" id="currentRow" value="">
+                                <table id="tbUser" class="table table-bordered dt-responsive nowrap"
+                                       style="border-collapse: collapse; border-spacing: 0; width: 100%;text-align: center ">
+                                    <thead>
+                                    <tr style="background: grey;">
+                                        <th style="text-align: center" class="col-1">#</th>
+                                        <th style="text-align: center" class="col-2">Full Name</th>
+                                        <th style="text-align: center" class="col-2">Phone</th>
+                                        <th style="text-align: center" class="col-2">User Name</th>
+                                        <th style="text-align: center" class="col-2">Role</th>
+<!--                                        <th style="text-align: center" class="col-1">Status</th>-->
+                                        <th style="text-align: center" class="col-5" colspan="2">Action</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Update -->
+
+
+        <footer class="footer">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-md-12">
+                        05/2022 - 12/2022 &copy; Theme by <a href="#">COS</a>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+</div>
+
+<th:block th:replace="/layout/script :: script"/>
+
+<th:block th:replace="/user/modalUpdate"/>
+<script src="assets/js/iziToast-1.4.0.js"></script>
+
+
+
+
+
+<script>
+    let user = new User();
+    let role = new Role();
+
+    function renderUser(obj) {
+        let str = `
+                <tr id="tr_${obj.id}">
+                    <td>${obj.id}</td>
+                    <td>${obj.fullName}</td>
+                    <td>${obj.phone}</td>
+                    <td>${obj.username}</td>
+                    <td>${obj.role.code}</td>
+                    <td>
+                        <button class="btn btn-outline-primary edit" data-id="${obj.id}"
+                            data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Edit">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-outline-danger delete" data-id="${obj.id}"
+                            data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="Delete">
+                            <i class="far fa-trash-alt"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+
+        return str;
+    }
+
+    function loadUsers() {
+        $.ajax({
+            headers: {
+                accept: "application/json",
+                "content-type": "application/json"
+            },
+            type: "GET",
+            url: "http://localhost:8080/api/users?deleted=0"
+        })
+            .done((data) => {
+                let tbUser = $("#tbUser tbody");
+
+                data.forEach(item => {
+                    let str = renderUser(item);
+                    tbUser.prepend(str);
+                });
+
+                // enableTootip();
+
+                removeHandleShowModal();
+
+                getAllRole();
+
+                handleShowGroupModal();
+            })
+            .fail((jqXHR) => {
+                console.log(jqXHR);
+            })
+    }
+
+    loadUsers();
+
+    function getUserById(userId) {
+        return $.ajax({
+            headers: {
+                accept: "application/json",
+                "content-type": "application/json"
+            },
+            type: "GET",
+            url: "http://localhost:8080/api/users/" + userId
+        })
+            .done((data) => {
+                user = data;
+            })
+            .fail((jqXHR) => {
+                console.log(jqXHR);
+            })
+    }
+
+    function handleShowUpdateModal() {
+
+        role.id = $("#roleIdUp").val();
+        role.code = $("#roleIdUp option:selected").text();
+
+        $("button.edit").on("click", function() {
+
+            let userId = $(this).data("id");
+            $.ajax({
+                "type": "GET",
+                "url": "http://localhost:8080/api/users/" + userId
+            })
+            .done((data) => {
+                user = data;
+
+                role = user.role;
+
+                $("#userIdUp").val(userId);
+                $("#fullNameUp").val(user.fullName);
+                $("#phoneUp").val(user.phone);
+                $("#userNameUp").val(user.username);
+                $("#roleIdUp").val(role.code);
+                // user.role = role;
+
+                $("#modalUpdateUser").modal("show");
+            })
+            .fail((jqXHR) => {
+                console.log(jqXHR)
+                alert("fail");
+            })
+        })
+    }
+
+    let btnUpdate = $("#btnUpdate");
+    btnUpdate.on("click", () => {
+        role.id=$("#roleIdUp").val();
+        role.code=$("#roleIdUp option:selected").text();
+
+        user.fullName = $("#fullNameUp").val();
+        user.phone = $("#phoneUp").val();
+        // user.username = $("#usernameUp").val();
+        user.role=role;
+
+        console.log(user)
+
+        // let obj = {
+        //     fullName: $("#fullNameUp").val(),
+        //     phone: $("#phoneUp").val(),
+        //     username: $("#usernameUp").val(),
+        //
+        // }
+
+        $.ajax({
+            headers: {
+                accept: "application/json",
+                "content-type": "application/json"
+            },
+            type: "PUT",
+            url: "http://localhost:8080/api/users/update" ,
+            // data: JSON.stringify(user)
+        })
+            .done((data) => {
+                let str = renderUser(data);
+
+                let updateRow = $("#tr_" + user.id);
+                updateRow.replaceWith(str);
+
+                // enableTootip();
+
+                removeHandleShowModal();
+
+                handleShowGroupModal();
+                App.SweetAlert.showSuccessAlert("Update success!");
+                $("#modalUpdateUser").modal("hide");
+
+            })
+            .fail((jqXHR) => {
+                console.log(jqXHR);
+                App.SweetAlert.showErrorAlert("Update unsuccessful!")
+            })
+    })
+
+    $("#tbUser").on("click", ".delete", function () {
+        user.id = $(this).data('id');
+        $("#currentRow").val($(this).closest("tr").attr("id"));
+        showSuspendedModal();
+    });
+
+    function showSuspendedModal() {
+
+        let userId = user.id;
+        console.log(userId);
+        App.SweetAlert.showDeactivateConfirmDialog()
+            .then((result) => {
+                if (result.isConfirmed) {
+
+                    doDelete(userId);
+                }
+            });
+
+    }
+
+    function doDelete(userId) {
+        console.log(userId)
+        $.ajax({
+            type: "DELETE",
+            headers: {
+                'accept': "application/json",
+                'content-type': "application/json"
+            },
+            url: "http://localhost:8080/api/users/delete/" + userId,
+            data: JSON.stringify(userId)
+        }).done(() => {
+
+            $("#tr_" + userId).remove();
+
+            App.SweetAlert.showSuccessAlert("Delete Date Successfully !");
+
+        }).fail((jqXHR) => {
+            $("#tr_" + userId).remove();
+            App.SweetAlert.showSuccessAlert(jqXHR.responseText);
+
+            // App.SweetAlert.showErrorAlert("An error occurred. Please try again later!");
+
+        })
+    }
+
+
+    function handleShowGroupModal() {
+        handleShowUpdateModal();
+
+        handleShowConfirmDelete();
+    }
+
+    function removeHandleShowModal() {
+        $(".edit").off("click");
+        $(".delete").off("click");
+    }
+
+    function getAllRole() {
+        $.ajax({
+
+            type: "GET",
+            url: "http://localhost:8080/api/roles"
+        })
+            .done((data) => {
+
+                $("#roleIdUp").empty();
+
+                $.each(data, (i, item) => {
+                    let str = `<option value="${item.id}" >${item.code}</option>`;
+                    $("#roleIdUp").append(str);
+                });
+            })
+            .fail((jqXHR) => {
+                console.log(jqXHR);
+            })
+    }
+
+</script>
+
+</body>
+
+</html>
